@@ -442,7 +442,7 @@ bool client_auth_by_workers(YAAMP_CLIENT *client)
 //		source = new YAAMP_SOURCE;
 //		memset(source, 0, sizeof(YAAMP_SOURCE));
 //
-//		strncpy(source->ip, client->sock->ip, 1024);
+//		strncpy(source->ip, client->sock->ip, 64);
 //		source->speed = 1;
 //
 //		g_list_source.AddTail(source);

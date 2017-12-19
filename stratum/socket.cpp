@@ -24,7 +24,7 @@ YAAMP_SOCKET *socket_initialize(int sock)
 	memset(&name, 0, len);
 
 	int res = getpeername(s->sock, (struct sockaddr *)&name, &len);
-	inet_ntop(AF_INET, &name.sin_addr, s->ip, 1024);
+	inet_ntop(AF_INET, &name.sin_addr, s->ip, 64);
 
 	res = getsockname(s->sock, (struct sockaddr *)&name, &len);
 	s->port = ntohs(name.sin_port);

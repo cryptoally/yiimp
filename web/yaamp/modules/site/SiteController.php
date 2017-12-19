@@ -361,6 +361,15 @@ class SiteController extends CommonController
 
 	/////////////////////////////////////////////////
 
+	public function actionBotnets()
+	{
+		if(!$this->admin) return;
+
+		$this->render('botnets');
+	}
+
+	/////////////////////////////////////////////////
+
 	public function actionIndex()
 	{
 		if(isset($_GET['address']))

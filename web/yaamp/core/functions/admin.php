@@ -6,6 +6,7 @@ function getAdminSideBarLinks()
 {
 $links = <<<end
 <a href="/site/exchange">Exchanges</a>&nbsp;
+<a href="/site/botnets">Botnets</a>&nbsp;
 <a href="/site/user">Users</a>&nbsp;
 <a href="/site/worker">Workers</a>&nbsp;
 <a href="/site/version">Version</a>&nbsp;

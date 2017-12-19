@@ -5,12 +5,12 @@
 //	int count;
 //	double speed;
 //
-//	char ip[1024];
+//	char ip[64];
 //};
 
 struct YAAMP_ALGO
 {
-	char name[1024];
+	char name[64];
 	YAAMP_HASH_FUNCTION hash_function;
 
 	double diff_multiplier;
@@ -122,6 +122,7 @@ void get_random_key(char *key);
 
 void client_sort();
 void client_block_ip(YAAMP_CLIENT *client, const char *reason);
+void client_block_ipset(YAAMP_CLIENT *client, const char *ipset_name);
 
 bool client_reset_multialgo(YAAMP_CLIENT *client, bool first);
 bool client_initialize_multialgo(YAAMP_CLIENT *client);

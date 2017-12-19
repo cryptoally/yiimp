@@ -125,11 +125,25 @@ int client_ask(YAAMP_CLIENT *client, const char *method, const char *format, ...
 void client_block_ip(YAAMP_CLIENT *client, const char *reason)
 {
 	char buffer[1024];
-
 	sprintf(buffer, "iptables -A INPUT -s %s -p tcp --dport %d -j REJECT", client->sock->ip, g_tcp_port);
-	int s = system(buffer);
+	if(strcmp("0.0.0.0", client->sock->ip) == 0) return;
+	if(strstr(client->sock->ip, "192.168.")) return;
+	if(strstr(client->sock->ip, "127.0.0.")) return;
 
-	stratumlog("%s %s blocked (%s)\n", client->sock->ip, client->username, reason);
+	int s = system(buffer);
+	stratumlog("%s: %s blocked (%s)\n", g_stratum_algo, client->sock->ip, reason);
+}
+
+void client_block_ipset(YAAMP_CLIENT *client, const char *ipset_name)
+{
+	char buffer[1024];
+	sprintf(buffer, "ipset -q -A %s %s", ipset_name, client->sock->ip);
+	if(strcmp("0.0.0.0", client->sock->ip) == 0) return;
+	if(strstr(client->sock->ip, "192.168.")) return;
+	if(strstr(client->sock->ip, "127.0.0.")) return;
+
+	int s = system(buffer);
+	stratumlog("%s: %s blocked via ipset %s %s\n", g_stratum_algo, client->sock->ip, ipset_name, client->username);
 }
 
 bool client_reset_multialgo(YAAMP_CLIENT *client, bool first)

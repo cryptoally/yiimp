@@ -3,7 +3,7 @@
 
 struct YAAMP_SOCKET
 {
-	char ip[1024];
+	char ip[64];
 	int port;
 
 //	pthread_mutex_t mutex;
