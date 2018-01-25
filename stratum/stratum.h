@@ -74,6 +74,7 @@ extern char g_sql_host[1024];
 extern char g_sql_database[1024];
 extern char g_sql_username[1024];
 extern char g_sql_password[1024];
+extern int g_sql_port;
 
 extern char g_stratum_coin_include[256];
 extern char g_stratum_coin_exclude[256];
@@ -139,6 +140,7 @@ void sha256_double_hash_hex(const char *input, char *output, unsigned int len);
 #include "algos/x13.h"
 #include "algos/x14.h"
 #include "algos/x15.h"
+#include "algos/x16r.h"
 #include "algos/x17.h"
 #include "algos/xevan.h"
 #include "algos/hmq17.h"

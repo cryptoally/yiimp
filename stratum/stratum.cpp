@@ -23,6 +23,7 @@ char g_sql_host[1024];
 char g_sql_database[1024];
 char g_sql_username[1024];
 char g_sql_password[1024];
+int g_sql_port = 3306;
 
 char g_stratum_coin_include[256];
 char g_stratum_coin_exclude[256];
@@ -34,7 +35,7 @@ int g_stratum_max_ttf;
 int g_stratum_max_cons = 5000;
 bool g_stratum_reconnect;
 bool g_stratum_renting;
-bool g_stratum_segwit;
+bool g_stratum_segwit = false;
 bool g_autoexchange = true;
 
 uint64_t g_max_shares = 0;
@@ -109,6 +110,7 @@ YAAMP_ALGO g_algos[] =
 	{"x11evo", x11evo_hash, 1, 0, 0},
 	{"xevan", xevan_hash, 0x100, 0, 0},
 
+	{"x16r", x16r_hash, 0x100, 0, 0},
 	{"timetravel", timetravel_hash, 0x100, 0, 0},
 	{"bitcore", timetravel10_hash, 0x100, 0, 0},
 	{"hsr", hsr_hash, 1, 0, 0},
@@ -218,6 +220,7 @@ int main(int argc, char **argv)
 	strcpy(g_sql_database, iniparser_getstring(ini, "SQL:database", NULL));
 	strcpy(g_sql_username, iniparser_getstring(ini, "SQL:username", NULL));
 	strcpy(g_sql_password, iniparser_getstring(ini, "SQL:password", NULL));
+	g_sql_port = iniparser_getint(ini, "SQL:port", 3306);
 
 	// optional coin filters (to mine only one on a special port or a test instance)
 	char *coin_filter = iniparser_getstring(ini, "WALLETS:include", NULL);
@@ -249,9 +252,9 @@ int main(int argc, char **argv)
 		g_current_algo->name, g_tcp_server, g_tcp_port);
 
 	// ntime should not be changed by miners for these algos
-	g_allow_rolltime = strcmp(g_current_algo->name,"x11evo");
-	g_allow_rolltime = g_allow_rolltime && strcmp(g_current_algo->name,"timetravel");
-	g_allow_rolltime = g_allow_rolltime && strcmp(g_current_algo->name,"bitcore");
+	g_allow_rolltime = strcmp(g_stratum_algo,"x11evo");
+	g_allow_rolltime = g_allow_rolltime && strcmp(g_stratum_algo,"timetravel");
+	g_allow_rolltime = g_allow_rolltime && strcmp(g_stratum_algo,"bitcore");
 	if (!g_allow_rolltime)
 		stratumlog("note: time roll disallowed for %s algo\n", g_current_algo->name);
 

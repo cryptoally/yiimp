@@ -12,7 +12,7 @@ void db_reconnect(YAAMP_DB *db)
 	mysql_init(&db->mysql);
 	for(int i=0; i<6; i++)
 	{
-		MYSQL *p = mysql_real_connect(&db->mysql, g_sql_host, g_sql_username, g_sql_password, g_sql_database, 0, 0, 0);
+		MYSQL *p = mysql_real_connect(&db->mysql, g_sql_host, g_sql_username, g_sql_password, g_sql_database, g_sql_port, 0, 0);
 		if(p) break;
 
 		stratumlog("%d, %s\n", i, mysql_error(&db->mysql));
@@ -87,12 +87,17 @@ void db_register_stratum(YAAMP_DB *db)
 	int t = time(NULL);
 	if(!db) return;
 
-	db_query(db, "insert into stratums (pid, time, algo) values (%d, %d, '%s') on duplicate key update time=%d",
-		pid, t, g_current_algo->name, t);
+	db_query(db, "INSERT INTO stratums (pid, time, started, algo, port) VALUES (%d, %d, %d, '%s', %d) "
+		" ON DUPLICATE KEY UPDATE time=%d, algo='%s', port=%d",
+		pid, t, t, g_stratum_algo, g_tcp_port,
+		t, g_stratum_algo, g_tcp_port
+	);
 }
 
 void db_update_algos(YAAMP_DB *db)
 {
+	int pid = getpid();
+	//int fds = 0; // todo, sample: ls -l /proc/$PID/fd | grep socket | grep -c .
 	if(!db) return;
 
 	if(g_current_algo->overflow)
@@ -100,8 +105,19 @@ void db_update_algos(YAAMP_DB *db)
 		debuglog("setting overflow\n");
 		g_current_algo->overflow = false;
 
-		db_query(db, "update algos set overflow=true where name='%s'", g_current_algo->name);
+		db_query(db, "UPDATE algos SET overflow=true WHERE name='%s'", g_stratum_algo);
 	}
+
+	char symbol[16] = "NULL\0";
+	if(g_list_coind.count == 1) {
+		if (g_list_coind.first) {
+			CLI li = g_list_coind.first;
+			YAAMP_COIND *coind = (YAAMP_COIND *)li->data;
+			sprintf(symbol,"'%s'", coind->symbol);
+		}
+	}
+
+	db_query(db, "UPDATE stratums SET workers=%d, symbol=%s WHERE pid=%d", g_list_client.count, symbol, pid);
 
 	///////////////////////////////////////////////////////////////////////////////////////////
 
@@ -184,6 +200,17 @@ void db_update_coinds(YAAMP_DB *db)
 			coind->newcoind = false;
 
 		strcpy(coind->name, row[1]);
+		strcpy(coind->symbol, row[20]);
+		// optional coin filters
+		if(coind->newcoind) {
+			bool ignore = false;
+			if (strlen(g_stratum_coin_include) && !strstr(g_stratum_coin_include, coind->symbol)) ignore = true;
+			if (strlen(g_stratum_coin_exclude) && strstr(g_stratum_coin_exclude, coind->symbol)) ignore = true;
+			if (ignore) {
+				object_delete(coind);
+				continue;
+			}
+		}
 
 		if(row[7]) strcpy(coind->wallet, row[7]);
 		if(row[6]) strcpy(coind->rpcencoding, row[6]);
@@ -236,7 +263,6 @@ void db_update_coinds(YAAMP_DB *db)
 		if(row[18]) coind->charity_percent = atof(row[18]);
 		if(row[19]) coind->reward_mul = atof(row[19]);
 
-		strcpy(coind->symbol, row[20]);
 		if(row[21]) coind->isaux = atoi(row[21]);
 
 		if(row[22] && row[23]) coind->actual_ttf = min(atoi(row[22]), atoi(row[23]));
@@ -266,20 +292,26 @@ void db_update_coinds(YAAMP_DB *db)
 		if(!strcmp(coind->symbol, "DCR") && strcmp(coind->rpcencoding, "DCR"))
 			strcpy(coind->rpcencoding, "DCR");
 
+		// old dash masternodes coins..
+		if(coind->hasmasternodes) {
+			if (strcmp(coind->symbol, "ALQO") == 0) coind->oldmasternodes = true;
+			if (strcmp(coind->symbol, "BSD") == 0) coind->oldmasternodes = true;
+			if (strcmp(coind->symbol, "BWK") == 0) coind->oldmasternodes = true;
+			if (strcmp(coind->symbol, "CHC") == 0) coind->oldmasternodes = true;
+			if (strcmp(coind->symbol, "CRW") == 0) coind->oldmasternodes = true;
+			if (strcmp(coind->symbol, "FLAX") == 0) coind->oldmasternodes = true;
+			if (strcmp(coind->symbol, "ITZ") == 0) coind->oldmasternodes = true;
+			if (strcmp(coind->symbol, "J") == 0 || strcmp(coind->symbol2, "J") == 0) coind->oldmasternodes = true;
+			if (strcmp(coind->symbol, "URALS") == 0) coind->oldmasternodes = true;
+			if (strcmp(coind->symbol, "VSX") == 0) coind->oldmasternodes = true;
+			if (strcmp(coind->symbol, "XLR") == 0) coind->oldmasternodes = true;
+		}
+
 		////////////////////////////////////////////////////////////////////////////////////////////////////
 
 		//coind->touch = true;
 		if(coind->newcoind)
 		{
-			// optional coin filter
-			bool ignore = false;
-			if (strlen(g_stratum_coin_include) && !strstr(g_stratum_coin_include, coind->symbol)) ignore = true;
-			if (strlen(g_stratum_coin_exclude) && strstr(g_stratum_coin_exclude, coind->symbol)) ignore = true;
-			if (ignore) {
-				object_delete(coind);
-				continue;
-			}
-
 			debuglog("connecting to coind %s\n", coind->symbol);
 
 			bool b = rpc_connect(&coind->rpc);
