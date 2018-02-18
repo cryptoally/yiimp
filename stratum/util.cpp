@@ -149,7 +149,11 @@ void clientlog(YAAMP_CLIENT *client, const char *format, ...)
 	if(g_clientlog)
 	{
 		fprintf(g_clientlog, "%s", buffer3);
-		fflush(g_clientlog);
+		if (fflush(g_clientlog) == EOF) {
+			// reopen if wiped
+			fclose(g_clientlog);
+			g_clientlog = fopen("client.log", "a");
+		}
 	}
 }
 
@@ -219,7 +223,10 @@ void stratumlog(const char *format, ...)
 	if(g_stratumlog)
 	{
 		fprintf(g_stratumlog, "%s: %s", buffer2, buffer);
-		fflush(g_stratumlog);
+		if (fflush(g_stratumlog) == EOF) {
+			fclose(g_stratumlog);
+			g_stratumlog = fopen("stratum.log", "a");
+		}
 	}
 }
 
@@ -264,7 +271,10 @@ void rejectlog(const char *format, ...)
 	if(g_rejectlog)
 	{
 		fprintf(g_rejectlog, "%s: %s", buffer2, buffer);
-		fflush(g_rejectlog);
+		if (fflush(g_rejectlog) == EOF) {
+			fclose(g_rejectlog);
+			g_rejectlog = fopen("reject.log", "a");
+		}
 	}
 }
 
